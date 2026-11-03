@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAS_Energy — Ước tính hệ điện mặt trời & Xuất báo cáo</title>
+  <meta name="description" content="Hệ thống ước tính sản lượng điện mặt trời CAS Energy, phân tích bức xạ xã/phường, dự toán vật tư thi công và bài toán dòng tiền hoàn vốn 25 năm.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/report-pdf.css">
+
+  <!-- Chart.js, html2canvas, jsPDF & html2pdf.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+  <!-- Ambient background lighting -->
+  <div class="bg-ambient"></div>
+
+  <div class="app-wrapper">
+    <!-- Main Top Navigation -->
+    <header class="app-header no-print">
+      <div class="header-container">
+        <div class="brand-group" id="btn-brand-home" title="Bấm vào logo để tạo báo cáo mới cho dự án mới" role="button" tabindex="0">
+          <img src="assets/cas_logo.jpg" alt="CAS Logo" class="brand-logo-img">
+          <div class="brand-info">
+            <h1>CAS_Energy <span class="brand-tag">Solar Pro</span></h1>
+            <p>Phần mềm tính sản lượng, bóc tách vật tư & dòng tiền 25 năm</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="preset-badge" style="cursor: default; background: rgba(14, 165, 233, 0.12); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            Hotline: +84 (236) 3675 666
+          </div>
+
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-quote" title="Sao chép tóm tắt báo giá gửi khách Zalo">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            Sao chép
+          </button>
+
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-save-project-header" title="Lưu phương án tính toán hiện tại">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Lưu dự án
+          </button>
+
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-export-excel" title="Xuất bảng BOM & Dòng tiền ra file Excel (.CSV)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="8" y1="13" x2="16" y2="13"></line>
+              <line x1="8" y1="17" x2="16" y2="17"></line>
+            </svg>
+            Xuất Excel
+          </button>
+
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-print-report" title="In trực tiếp">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            In báo cáo
+          </button>
+
+          <button type="button" class="btn btn-primary btn-sm" id="btn-export-pdf" title="Xuất file PDF 2 trang chuẩn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Tải PDF (2 Trang)
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="main-container">
+      <!-- View mode switch tabs -->
+      <div class="view-tabs no-print">
+        <button class="view-tab active" data-tab="dashboard">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Bảng tính & Dashboard
+        </button>
+        <button class="view-tab" data-tab="pdf-preview">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          Xem trước Báo cáo PDF (2 Trang)
+        </button>
+        <button class="view-tab" data-tab="saved-projects" id="tab-btn-saved">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          Dự án đã lưu (<span id="saved-projects-tab-count">0</span>)
+        </button>
+      </div>
+
+      <!-- Tab 1: Interactive Workspace Grid -->
+      <div id="tab-dashboard" class="tab-content active">
+        <div class="workspace-grid">
+          <!-- Left Column: Input Forms matching images -->
+          <div class="form-panel no-print">
+            <form id="solar-input-form" onsubmit="return false;">
+              <!-- 1. NƠI LẮP & NGUỒN ĐIỆN -->
+              <div class="form-card">
+                <div class="form-card-header">
+                  <span>1 · Nơi lắp & Nguồn điện</span>
+                </div>
+
+                <div class="input-row-2 form-group">
+                  <div>
+                    <label class="form-label" for="select-province">Tỉnh / Thành phố <span class="required">*</span></label>
+                    <select id="select-province" class="form-select">
+                      <option value="" disabled selected>-- Chọn Tỉnh / Thành phố --</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label" for="select-ward">
+                      <span>Xã / Phường <span class="required">*</span></span>
+                    </label>
+                    <select id="select-ward" class="form-select">
+                      <option value="" disabled selected>-- Chọn Xã / Phường --</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Radiation Display & Custom Adjustment -->
+                <div class="form-group">
+                  <div class="tip-box" style="margin-top: 0; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <span>Bức xạ tính toán: </span>
+                      <strong id="display-radiation-val" style="color: #38bdf8; font-size: 13px;">-- kWh/m²/ngày</strong>
+                      <span id="radiation-source-tag" style="font-size: 11px; color: #94a3b8; margin-left: 4px;">(chưa chọn địa phương)</span>
+                    </div>
+                    <button type="button" class="btn-text-action" id="btn-toggle-custom-rad" style="background: none; border: none; color: #38bdf8; font-size: 12px; cursor: pointer; text-decoration: underline;">
+                      ✏️ Tùy chỉnh
+                    </button>
+                  </div>
+                  <div id="custom-radiation-panel" style="display: none; margin-bottom: 12px; background: rgba(14, 165, 233, 0.08); padding: 10px 12px; border-radius: 8px; border: 1px dashed rgba(56, 189, 248, 0.3);">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                      <input type="number" id="input-custom-radiation" class="form-control" style="max-width: 140px; padding: 6px 10px;" placeholder="ví dụ 4.5" step="0.05" min="2.0" max="7.0">
+                      <span style="font-size: 12px; color: #94a3b8;">kWh/m²/ngày</span>
+                      <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-radiation" style="margin-left: auto;">Khôi phục</button>
+                    </div>
+                    <p class="form-help-text" style="margin-top: 5px; margin-bottom: 0;">Nhập số riêng nếu bạn có số liệu đo đạc thực địa hoặc phần mềm PVsyst.</p>
+                  </div>
+                </div>
+
+                <!-- Grid Phase Selection -->
+                <div class="form-group">
+                  <label class="form-label">Điện nhà bạn là <span class="required">*</span></label>
+                  <div class="pill-group" id="phase-group">
+                    <div class="pill-option" data-value="1">1 pha (220V) — đa số nhà dân</div>
+                    <div class="pill-option" data-value="3">3 pha (380V) — nhà lớn, xưởng, kinh doanh</div>
+                  </div>
+                  <input type="hidden" id="input-phase" value="">
+                </div>
+
+                <!-- Tariff Type Selection -->
+                <div class="form-group">
+                  <label class="form-label">Loại giá điện đang dùng <span class="required">*</span></label>
+                  <div class="pill-group" id="tariff-group">
+                    <div class="pill-option" data-value="residential">Sinh hoạt (bậc thang)</div>
+                    <div class="pill-option" data-value="commercial">Kinh doanh (theo giờ)</div>
+                    <div class="pill-option" data-value="industrial">Sản xuất (theo giờ)</div>
+                    <div class="pill-option" data-value="flat">Điện một giá</div>
+                  </div>
+                  <input type="hidden" id="input-tariff" value="">
+                  <p class="form-help-text" id="tariff-indicator">Chọn biểu giá điện bạn đang sử dụng</p>
+                </div>
+
+                <!-- Bill Amount or Monthly kWh -->
+                <div class="input-row-2 form-group">
+                  <div>
+                    <label class="form-label" for="input-bill">Hoá đơn tiền điện TB (đ/tháng)</label>
+                    <input type="text" id="input-bill" class="form-control" placeholder="ví dụ 3.000.000" value="">
+                  </div>
+                  <div>
+                    <label class="form-label" for="input-kwh">Hoặc số điện dùng (kWh)</label>
+                    <input type="number" id="input-kwh" class="form-control" placeholder="để trống nếu đã nhập tiền" value="">
+                  </div>
+                </div>
+
+                <!-- Daytime Consumption Ratio -->
+                <div class="form-group">
+                  <label class="form-label" for="input-daytime-ratio">
+                    <span>Tỉ lệ dùng điện BAN NGÀY (%)</span>
+                    <span id="daytime-pct-badge" style="color: #38bdf8; font-weight: 700;">--%</span>
+                  </label>
+                  <input type="number" id="input-daytime-ratio" class="form-control" min="5" max="100" placeholder="ví dụ 35" value="">
+                  <p class="form-help-text">
+                    35% là tỉ lệ thường thấy với các gia đình dùng điện tập trung vào buổi tối. Nếu nhà bạn dùng điện ban ngày nhiều hơn (có người ở nhà, kinh doanh tại nhà...), vui lòng sửa lại con số này.
+                  </p>
+                </div>
+
+                <!-- System Type -->
+                <div class="form-group">
+                  <label class="form-label">Loại hệ <span class="required">*</span></label>
+                  <div class="pill-group" id="system-type-group">
+                    <div class="pill-option" data-value="grid_tie">Hoà lưới (bám tải)</div>
+                    <div class="pill-option" data-value="hybrid">Hybrid (có pin)</div>
+                  </div>
+                  <input type="hidden" id="input-system-type" value="">
+
+                  <!-- Khung cấu hình pin lưu trữ cho hệ Hybrid (Ảnh 3) -->
+                  <div id="hybrid-battery-config" class="hybrid-config-box" style="display: none;">
+                    <label class="form-label" for="input-battery-kwh">
+                      <span style="color: #fbbf24; font-weight: 700;">🔋 Dung lượng pin lưu trữ (kWh) — hệ Hybrid nhớ khai ô này</span>
+                    </label>
+                    <input type="number" id="input-battery-kwh" class="form-control" placeholder="ví dụ 10 hoặc để trống" value="">
+                    <p class="form-help-text" style="color: #cbd5e1; margin-top: 5px; margin-bottom: 12px;">
+                      Để trống thì CAS_Energy tự đề xuất theo lượng điện bạn dùng buổi tối. Pin càng lớn, dàn pin mặt trời càng phải rộng thêm để sạc cho đủ.
+                    </p>
+
+                    <label class="form-label" style="margin-bottom: 6px;">Cấp điện áp pin lưu trữ</label>
+                    <div class="pill-group" id="battery-voltage-group">
+                      <div class="pill-option active" data-value="LV">Áp thấp (LV)</div>
+                      <div class="pill-option" data-value="HV">Áp cao (HV)</div>
+                    </div>
+                    <input type="hidden" id="input-battery-voltage" value="LV">
+                    <p class="form-help-text" style="color: #94a3b8; margin-top: 6px;">
+                      LV phổ biến, rẻ, dễ mở rộng. HV hiệu suất và an toàn hơn ở hệ lớn — pin HV luôn kèm 1 hộp base/BMS riêng theo hãng, đã tính sẵn trong dự toán.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. MÁI NHÀ (Ảnh 4) -->
+              <div class="form-card">
+                <div class="form-card-header">
+                  <span>2 · Mái nhà</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="select-roof-type">Loại mái <span class="required">*</span> — quyết định vật tư khung</label>
+                  <select id="select-roof-type" class="form-select">
+                    <option value="" disabled selected>-- Chọn loại mái --</option>
+                    <option value="metal">Mái tôn (rail nhôm)</option>
+                    <option value="mini_rail">Mái tôn (mini rail)</option>
+                    <option value="seam_clip">Mái tôn seam/clip (khoá đứng)</option>
+                    <option value="tile">Mái ngói</option>
+                    <option value="concrete_steel">Mái bằng / bê tông (dựng khung sắt)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Mặt mái định lắp — mái 2 dốc, mái chữ L thì bấm thêm mặt</label>
+                  
+                  <div class="roof-items-container" id="roof-items-container">
+                    <!-- Dynamic roof rows generated here -->
+                  </div>
+
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-add-roof">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    + Thêm mặt mái
+                  </button>
+                </div>
+
+                <div class="tip-box">
+                  Không rõ hướng? Mở Google Maps, nhìn nóc nhà mình — phía trên bản đồ là Bắc. Mái ngói tính dốc 30°, các mái khác 10°. Hướng nào cũng lắp được — sản lượng tính đúng theo từng mặt bạn khai, nhiều mặt thì trộn theo diện tích. Mái ngói và mái bằng dùng bộ khung khác hẳn mái tôn — chênh nhau cả chục triệu.
+                </div>
+              </div>
+
+              <!-- 3. THIẾT BỊ (KHÔNG BẮT BUỘC) -->
+              <div class="form-card">
+                <div class="form-card-header">
+                  <span>3 · Thiết bị (không bắt buộc)</span>
+                </div>
+
+                <div class="input-row-2 form-group">
+                  <div>
+                    <label class="form-label" for="select-panel-brand">Hãng tấm pin</label>
+                    <select id="select-panel-brand" class="form-select">
+                      <option value="CAS_Energy tự chọn">CAS_Energy tự chọn</option>
+                      <option value="Aiko">Aiko</option>
+                      <option value="Astronergy">Astronergy</option>
+                      <option value="Canadian" selected>Canadian</option>
+                      <option value="Chint Astronergy">Chint Astronergy</option>
+                      <option value="JA Solar">JA Solar</option>
+                      <option value="Jinko">Jinko</option>
+                      <option value="LONGi">LONGi</option>
+                      <option value="Trina">Trina</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="form-label" for="select-panel-power">Công suất tấm (Wp)</label>
+                    <select id="select-panel-power" class="form-select">
+                      <option value="635" selected>635 Wp</option>
+                      <option value="620">620 Wp</option>
+                      <option value="580">580 Wp</option>
+                      <option value="450">450 Wp</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="input-custom-panel-count">
+                    <span>Số lượng tấm pin (tùy chọn)</span>
+                    <span style="font-size: 11.5px; color: #38bdf8;">để trống sẽ tự tính theo điện dùng</span>
+                  </label>
+                  <input type="number" id="input-custom-panel-count" class="form-control" placeholder="Để trống hoặc nhập số tấm (vd: 8, 10, 11, 16...)" min="1" max="500">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="select-inverter-brand">Hãng inverter</label>
+                  <select id="select-inverter-brand" class="form-select">
+                    <option value="CAS_Energy tự chọn">CAS_Energy tự chọn</option>
+                    <option value="SOLIS" selected>SOLIS</option>
+                    <option value="DEYE">DEYE</option>
+                    <option value="SOLAX">SOLAX</option>
+                    <option value="SUNGROW">SUNGROW</option>
+                    <option value="HUAWEI">HUAWEI</option>
+                  </select>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 16px;">
+                  <button type="button" class="btn-calc-action" id="btn-calculate" style="flex: 1;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    Tính toán & Cập nhật Báo cáo
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-reset-form" title="Xóa toàn bộ dữ liệu để nhập lại từ đầu" style="padding: 10px 14px; white-space: nowrap;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                      <path d="M3 3v5h5"></path>
+                    </svg>
+                    Xóa trống
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Right Column: Results & Interactive Analytics -->
+          <div class="results-panel">
+            <!-- Results Quick Bar with Save button -->
+            <div class="results-quick-bar no-print">
+              <div class="results-status-info">
+                <span class="status-indicator-dot"></span>
+                <span id="results-quick-summary">Chưa thực hiện tính toán</span>
+              </div>
+              <div class="results-quick-actions">
+                <button type="button" class="btn btn-primary btn-sm" id="btn-save-project-dash" title="Lưu lại phương án tính toán này">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                  </svg>
+                  Lưu dự án này
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-goto-saved-dash" title="Xem danh sách các dự án đã lưu">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  Dự án đã lưu (<span class="saved-count-sync">0</span>)
+                </button>
+              </div>
+            </div>
+
+            <!-- 8 Highlight Key Metrics (Matching Page 1 Results Grid) -->
+            <div class="metrics-row" id="dashboard-metrics">
+              <div class="metric-card-box">
+                <div class="metric-header-sub">
+                  <span>CÔNG SUẤT HỆ THỐNG</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                  </svg>
+                </div>
+                <div class="metric-main-val" id="val-power">-- <span class="metric-unit">kWp</span></div>
+                <div class="metric-footer-desc">Công suất DC đỉnh cực đại</div>
+              </div>
+
+              <div class="metric-card-box">
+                <div class="metric-header-sub">
+                  <span>SỐ TẤM PIN</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                  </svg>
+                </div>
+                <div class="metric-main-val" id="val-panel-count">-- <span class="metric-unit">tấm</span></div>
+                <div class="metric-footer-desc" id="val-panel-desc">Vui lòng nhập thông tin để tính</div>
+              </div>
+
+              <div class="metric-card-box">
+                <div class="metric-header-sub">
+                  <span>BIẾN TẦN (INVERTER)</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                    <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                  </svg>
+                </div>
+                <div class="metric-main-val" id="val-inverter">-- <span class="metric-unit">kW AC</span></div>
+                <div class="metric-footer-desc" id="val-phase-desc">Chưa tính toán</div>
+              </div>
+
+              <div class="metric-card-box">
+                <div class="metric-header-sub">
+                  <span>SẢN LƯỢNG TRUNG BÌNH</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                  </svg>
+                </div>
+                <div class="metric-main-val highlight" id="val-monthly-yield">-- <span class="metric-unit">kWh/tháng</span></div>
+                <div class="metric-footer-desc" id="val-annual-yield">-- kWh/năm</div>
+              </div>
+
+              <div class="metric-card-box">
+                <div class="metric-header-sub">
+                  <span>CHI PHÍ TRỌN GÓI</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" stroke-width="2">
+                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                    <line x1="2" y1="10" x2="22" y2="10"></line>
+                  </svg>
+                </div>
+                <div class="metric-main-val" id="val-total-cost">-- <span class="metric-unit">đ</span></div>
+                <div class="metric-footer-desc">Vật tư + Nhân công + EVN</div>
+              </div>
+
+              <div class="metric-card-box">
+                <div class="metric-header-sub">
+                  <span>TIẾT KIỆM NĂM ĐẦU</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                  </svg>
+                </div>
+                <div class="metric-main-val highlight" id="val-year1-savings">-- <span class="metric-unit">đ</span></div>
+                <div class="metric-footer-desc">Giảm tiền điện trực tiếp</div>
+              </div>
+
+              <div class="metric-card-box">
+                <div class="metric-header-sub">
+                  <span>THỜI GIAN HOÀN VỐN</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+                <div class="metric-main-val" id="val-payback">-- <span class="metric-unit">năm</span></div>
+                <div class="metric-footer-desc">Điểm hòa vốn đầu tư</div>
+              </div>
+
+              <div class="metric-card-box">
+                <div class="metric-header-sub">
+                  <span>LÃI RÒNG 25 NĂM</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                    <circle cx="12" cy="8" r="7"></circle>
+                    <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                  </svg>
+                </div>
+                <div class="metric-main-val highlight" id="val-net-profit">-- <span class="metric-unit">đ</span></div>
+                <div class="metric-footer-desc" id="val-cum-25">Lũy kế 25 năm: -- đ</div>
+              </div>
+            </div>
+
+            <!-- Interactive Visual Charts -->
+            <div class="charts-grid">
+              <!-- Monthly Yield Bar Chart -->
+              <div class="chart-card">
+                <div class="chart-title">
+                  <span>Sản lượng điện từng tháng (kWh)</span>
+                  <span class="chart-badge">T1 - T12</span>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="chart-monthly"></canvas>
+                </div>
+              </div>
+
+              <!-- 25 Years Cashflow Curve Chart -->
+              <div class="chart-card">
+                <div class="chart-title">
+                  <span>Dòng tiền tích lũy 25 năm (VNĐ)</span>
+                  <span class="chart-badge">Điểm hòa vốn: <strong id="chart-payback-label">6,4 năm</strong></span>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="chart-cashflow"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- 25-Year Cashflow Table (Quick inspect) -->
+            <div class="chart-card">
+              <div class="chart-title">
+                <span>Chi tiết bảng dòng tiền 25 năm</span>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-view-pdf-tab">Xem trong báo cáo PDF</button>
+              </div>
+              <div class="data-table-container">
+                <table class="custom-table" id="dashboard-cashflow-table">
+                  <thead>
+                    <tr>
+                      <th>Năm</th>
+                      <th style="text-align: right;">Tiền điện tiết kiệm (đ)</th>
+                      <th style="text-align: right;">Lũy kế đã trừ chi phí đầu tư (đ)</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colspan="4" style="text-align: center; color: #94a3b8; padding: 24px;">
+                        Vui lòng nhập thông tin bên trái và bấm <strong>"Tính toán & Cập nhật Báo cáo"</strong>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: PDF Document Live Preview (2 Pages Matching Exact Specification) -->
+      <div id="tab-pdf-preview" class="tab-content">
+        <div class="pdf-preview-wrapper">
+          <!-- Toolbar -->
+          <div class="pdf-preview-toolbar no-print">
+            <div class="pdf-toolbar-info">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span>Xem trước Báo cáo A4 (2 Trang) — Sẵn sàng tải xuống PDF hoặc In</span>
+            </div>
+            <div class="pdf-toolbar-actions">
+              <div class="zoom-controls" style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-zoom-out" style="padding: 3px 8px; font-weight: 700;" title="Thu nhỏ">−</button>
+                <span id="zoom-level-text" style="font-size: 11px; min-width: 42px; text-align: center; color: #38bdf8; font-weight: 600;">100%</span>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-zoom-in" style="padding: 3px 8px; font-weight: 700;" title="Phóng to">+</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-zoom-reset" style="padding: 3px 8px; font-size: 10px;" title="Về 100%">1:1</button>
+              </div>
+
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-export-excel-preview" title="Tải bảng tính Excel CSV">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                Xuất Excel
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-print-preview">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                In báo cáo
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-download-pdf-preview">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Tải file PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- The Printable & Exportable 2-Page PDF Document -->
+          <div class="pdf-document" id="pdf-export-container">
+            <!-- ================= PAGE 1 ================= -->
+            <section class="pdf-page" id="pdf-page-1">
+              <div class="pdf-top-bar"></div>
+
+              <!-- Header -->
+              <header class="pdf-header">
+                <div class="pdf-header-left">
+                  <img src="assets/cas_logo.jpg" alt="CAS Logo" class="pdf-logo-img">
+                  <div>
+                    <h1 class="pdf-header-title">CAS_Energy — Báo cáo ước tính điện mặt trời</h1>
+                    <p class="pdf-header-sub">
+                      Lập ngày <span id="pdf-date">24/08/2026</span> · <span style="color: #0284c7; font-weight: 600;">cas-energy.vn</span>
+                    </p>
+                  </div>
+                </div>
+                <div class="pdf-hotline-box">
+                  <div class="pdf-hotline-label">Hotline CAS Energy</div>
+                  <div class="pdf-hotline-number">+84 (236) 3675 666</div>
+                </div>
+              </header>
+
+              <!-- Section: Thông tin công trình -->
+              <div class="pdf-section-title">Thông tin công trình</div>
+              <div class="pdf-info-grid">
+                <div class="pdf-info-label">Địa điểm</div>
+                <div class="pdf-info-value" id="pdf-location">--</div>
+
+                <div class="pdf-info-label">Bức xạ tính toán</div>
+                <div class="pdf-info-value">
+                  <span id="pdf-radiation">--</span> kWh/m²/ngày <span class="pdf-info-sub">(số riêng của xã)</span>
+                </div>
+
+                <div class="pdf-info-label">Nguồn điện · biểu giá</div>
+                <div class="pdf-info-value" id="pdf-grid-tariff">--</div>
+
+                <div class="pdf-info-label">Mái</div>
+                <div class="pdf-info-value" id="pdf-roof-info">--</div>
+
+                <div class="pdf-info-label">Loại hệ</div>
+                <div class="pdf-info-value" id="pdf-system-type">--</div>
+              </div>
+
+              <!-- Section: Kết quả đề xuất -->
+              <div class="pdf-section-title">Kết quả đề xuất</div>
+              <div class="pdf-metrics-grid">
+                <!-- Row 1 -->
+                <div class="pdf-metric-card">
+                  <div class="pdf-metric-label">Công suất</div>
+                  <div class="pdf-metric-value" id="pdf-metric-power">-- kWp</div>
+                </div>
+                <div class="pdf-metric-card">
+                  <div class="pdf-metric-label">Số tấm pin</div>
+                  <div class="pdf-metric-value" id="pdf-metric-panels">-- tấm</div>
+                </div>
+                <div class="pdf-metric-card">
+                  <div class="pdf-metric-label">Inverter</div>
+                  <div class="pdf-metric-value" id="pdf-metric-inverter">-- kW AC</div>
+                </div>
+                <div class="pdf-metric-card">
+                  <div class="pdf-metric-label">Sản lượng</div>
+                  <div class="pdf-metric-value" id="pdf-metric-yield">-- kWh/tháng</div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="pdf-metric-card">
+                  <div class="pdf-metric-label">Chi phí trọn gói</div>
+                  <div class="pdf-metric-value" id="pdf-metric-cost">-- đ</div>
+                </div>
+                <div class="pdf-metric-card">
+                  <div class="pdf-metric-label">Tiết kiệm năm đầu</div>
+                  <div class="pdf-metric-value" id="pdf-metric-savings">-- đ</div>
+                </div>
+                <div class="pdf-metric-card">
+                  <div class="pdf-metric-label">Hoàn vốn</div>
+                  <div class="pdf-metric-value" id="pdf-metric-payback">-- năm</div>
+                </div>
+                <div class="pdf-metric-card">
+                  <div class="pdf-metric-label">Lãi ròng 25 năm</div>
+                  <div class="pdf-metric-value" id="pdf-metric-netprofit">-- đ</div>
+                </div>
+              </div>
+
+              <!-- Section: Sản lượng từng tháng (kWh) -->
+              <div class="pdf-section-title">Sản lượng từng tháng (kWh)</div>
+              <table class="pdf-monthly-table">
+                <thead>
+                  <tr>
+                    <th>T1</th><th>T2</th><th>T3</th><th>T4</th><th>T5</th><th>T6</th>
+                    <th>T7</th><th>T8</th><th>T9</th><th>T10</th><th>T11</th><th>T12</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr id="pdf-monthly-row">
+                    <td>--</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td>
+                    <td>--</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Section: Dòng tiền 25 năm (đ) - Toàn bộ Năm 1 đến 25 -->
+              <div class="pdf-section-title">Dòng tiền 25 năm (đ)</div>
+              <table class="pdf-cashflow-table" id="pdf-cashflow-page1-table">
+                <thead>
+                  <tr>
+                    <th style="width: 15%;">Năm</th>
+                    <th style="width: 40%; text-align: right;">Tiền điện tiết kiệm</th>
+                    <th style="width: 45%; text-align: right;">Lũy kế (đã trừ vốn đầu tư)</th>
+                  </tr>
+                </thead>
+                <tbody id="pdf-cashflow-body-1">
+                  <!-- Toàn bộ Năm 1 đến Năm 25 hiển thị liền mạch, đều đặn -->
+                </tbody>
+              </table>
+
+              <p class="pdf-footnote">
+                Giả thiết: giá điện tăng 3%/năm · tấm pin suy hao 0,8%/năm · lũy kế đã trừ toàn bộ chi phí đầu tư.
+              </p>
+
+              <div class="pdf-page-number">Trang 1 / 2</div>
+            </section>
+
+            <!-- ================= PAGE 2 ================= -->
+            <section class="pdf-page" id="pdf-page-2">
+              <div class="pdf-top-bar"></div>
+
+              <!-- Header Trang 2 -->
+              <header class="pdf-header">
+                <div class="pdf-header-left">
+                  <img src="assets/cas_logo.jpg" alt="CAS Logo" class="pdf-logo-img">
+                  <div>
+                    <h1 class="pdf-header-title">CAS_Energy — Dự toán vật tư & thi công chi tiết</h1>
+                    <p class="pdf-header-sub">Bảng bóc tách danh mục thiết bị, phụ kiện & phương án kỹ thuật trọn gói</p>
+                  </div>
+                </div>
+                <div class="pdf-hotline-box">
+                  <div class="pdf-hotline-label">Hotline CAS Energy</div>
+                  <div class="pdf-hotline-number">+84 (236) 3675 666</div>
+                </div>
+              </header>
+
+              <!-- Section: Dự toán vật tư & thi công -->
+              <div class="pdf-section-title" style="margin-top: 6px;">Dự toán vật tư & thi công</div>
+              <table class="pdf-bom-table" id="pdf-bom-table">
+                <thead>
+                  <tr>
+                    <th style="width: 32%;">Hạng mục</th>
+                    <th style="width: 53%;">Quy cách</th>
+                    <th style="width: 15%; text-align: right;">SL</th>
+                  </tr>
+                </thead>
+                <tbody id="pdf-bom-tbody">
+                  <!-- Populated dynamically by BOM engine -->
+                </tbody>
+              </table>
+
+              <!-- Highlight Total Box (Xanh Da Trời CAS) -->
+              <div class="pdf-bom-total-box">
+                <span>TỔNG TRỌN GÓI (vật tư + nhân công + hồ sơ EVN)</span>
+                <span class="pdf-bom-total-price" id="pdf-bom-total-price">-- đ</span>
+              </div>
+
+              <!-- Khối Cam kết chất lượng & Chính sách bảo hành CAS Energy -->
+              <div class="pdf-warranty-box">
+                <div class="pdf-warranty-title">Cam kết chất lượng & Bảo hành từ CAS Energy</div>
+                <div class="pdf-warranty-grid">
+                  <div class="pdf-warranty-item">
+                    <strong>Tấm pin quang điện:</strong> Bảo hành sản phẩm 12 năm, bảo hành hiệu suất 25 năm (>80%).
+                  </div>
+                  <div class="pdf-warranty-item">
+                    <strong>Biến tần Inverter:</strong> Bảo hành chính hãng 5 năm (hỗ trợ gói nâng cấp 10 năm).
+                  </div>
+                  <div class="pdf-warranty-item">
+                    <strong>Khung giàn & phụ kiện:</strong> Nhôm định hình anode hóa & ốc vít Inox 304 bền bỉ trên 25 năm.
+                  </div>
+                  <div class="pdf-warranty-item">
+                    <strong>Dịch vụ kỹ thuật:</strong> Giám sát online 24/7 qua app, miễn phí bảo trì định kỳ 2 năm đầu.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Xác nhận & Chữ ký đại diện -->
+              <div class="pdf-signature-grid">
+                <div class="pdf-signature-col">
+                  <div class="pdf-signature-role">ĐẠI DIỆN KHÁCH HÀNG</div>
+                  <div class="pdf-signature-desc">(Ký và ghi rõ họ tên)</div>
+                  <div class="pdf-signature-space"></div>
+                </div>
+                <div class="pdf-signature-col">
+                  <div class="pdf-signature-role">ĐẠI DIỆN CAS ENERGY</div>
+                  <div class="pdf-signature-desc">(Kỹ sư lập dự toán kỹ thuật)</div>
+                  <div class="pdf-signature-space"></div>
+                </div>
+              </div>
+
+              <!-- Footer Notice & Legal Info -->
+              <footer class="pdf-footer-note">
+                Đây là BÁO CÁO ƯỚC TÍNH theo dữ liệu khách khai và bức xạ khu vực; chưa phải báo giá chính thức. Kỹ sư CAS Energy khảo sát mái thật miễn phí, đo hướng và độ dốc, kiểm tra tủ điện rồi gửi báo giá có chữ ký. CÔNG TY CỔ PHẦN CAS ENERGY · MST 0110753616 · info@cas-energy.vn · +84 (236) 3675 666
+              </footer>
+
+              <div class="pdf-page-number">Trang 2 / 2</div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Quản lý Dự án Đã Tính Toán & Lưu Trữ -->
+      <div id="tab-saved-projects" class="tab-content">
+        <div class="saved-projects-view no-print">
+          <div class="saved-header-panel">
+            <div>
+              <h2 class="saved-main-title">Hồ Sơ Dự Án Đã Tính Toán & Lưu Trữ</h2>
+              <p class="saved-main-desc">Quản lý các phương án báo giá đã lưu. Bạn có thể nạp lại vào bảng tính để chỉnh sửa, xem báo cáo PDF hoặc chia sẻ báo giá nhanh chóng.</p>
+            </div>
+            <div class="saved-actions-group">
+              <div class="saved-search-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="saved-search-input" placeholder="Tìm theo tên, khách, địa chỉ...">
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-save-from-list">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Lưu dự án hiện tại
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-export-backup" title="Tải file JSON sao lưu toàn bộ danh sách">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Sao lưu (JSON)
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-import-backup-trigger" title="Khôi phục danh sách từ file JSON">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Nhập file
+              </button>
+              <input type="file" id="input-backup-file" accept=".json" style="display: none;">
+            </div>
+          </div>
+
+          <!-- Project Cards Container -->
+          <div id="saved-projects-grid" class="saved-projects-grid">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Lưu Dự Án -->
+  <div class="modal-backdrop" id="modal-save-project" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          <h3>Lưu Dự Án Tính Toán</h3>
+        </div>
+        <button type="button" class="btn-close-modal" id="btn-close-save-modal" aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" for="save-project-name">Tên gợi nhớ dự án / Khách hàng <span class="required">*</span></label>
+          <input type="text" id="save-project-name" class="form-control" placeholder="Ví dụ: Biệt thự Anh Hưng - P. Hòa Cường Bắc">
+        </div>
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" for="save-project-note">Ghi chú bổ sung (SĐT khách, địa chỉ chi tiết, lưu ý mái...)</label>
+          <textarea id="save-project-note" class="form-control" rows="2" placeholder="Ví dụ: Khách hẹn khảo sát sáng thứ 7, mái tôn hướng Nam..."></textarea>
+        </div>
+        <div class="save-project-summary-box" id="save-project-summary">
+          <!-- Dynamic snapshot summary -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-save">Hủy bỏ</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-confirm-save">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Xác nhận Lưu
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notice" id="toast-notice">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <span id="toast-msg">Đã tính toán thành công!</span>
+  </div>
+
+  <!-- Main JavaScript App Controller -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
